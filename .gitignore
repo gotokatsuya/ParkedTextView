@@ -1,0 +1,51 @@
+# Android Studio
+.gradle/
+.idea/
+build/
+gradlew.bat
+*.iml
+
+# Key Store
+pairs.keystore
+pairs_tw.keystore
+keystore.properties
+
+# Built application files
+*.apk
+*report.txt
+
+# Files for the Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Mac
+.DS_Store
+
+# IntelliJ
+.idea/
+*.ipr
+*.iws
+
+
+# Vim
+*.swp
+
+
+# Emacs
+*~
+
+# Crashlytics
+com_crashlytics_export_strings.xml
+crashlytics-build.properties
+
+
