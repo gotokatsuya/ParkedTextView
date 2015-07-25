@@ -1,5 +1,5 @@
 # ParkedTextView
-A EditText subclass with a constant text in the end.
+A EditText with a constant text in the end.
 
 ![](https://github.com/gotokatsuya/ParkedTextView/blob/master/doc/demo-gif.gif)
 
