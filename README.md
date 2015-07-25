@@ -27,7 +27,7 @@ A EditText subclass with a constant text in the end.
 
 ## Gradle
 
-Comming soon.
+Coming soon.
 
 ```java
 repositories {
