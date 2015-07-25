@@ -1,8 +1,10 @@
 package com.goka.parkedtextview;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.text.Editable;
 import android.text.Html;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -14,12 +16,16 @@ import android.widget.EditText;
 public class ParkedTextView extends EditText {
 
     private static final String TAG = ParkedTextView.class.getSimpleName();
+    private static final String DEFAULT_TEXT_COLOR = "FFFFFF";
 
     // Able to set
     private String mParkedText = "";
+    private boolean mIsBoldParkedText = true;
+    private String mParkedTextColor = DEFAULT_TEXT_COLOR;
+    private String mParkedHintColor = DEFAULT_TEXT_COLOR;
 
     // Unable to set
-    private String mText = "";
+    private String mText = null;
     private enum TypingState {
         Start, Typed
     }
@@ -31,18 +37,52 @@ public class ParkedTextView extends EditText {
     }
 
     public ParkedTextView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public ParkedTextView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.ParkedTextView, defStyleAttr, 0);
+
+        mParkedText = a.getString(R.styleable.ParkedTextView_parkedText);
+        if (mParkedText == null) {
+            mParkedText = "";
+        }
+
+        String hint = a.getString(R.styleable.ParkedTextView_parkedHint);
+
+        mParkedTextColor = a.getString(R.styleable.ParkedTextView_parkedTextColor);
+        if (mParkedTextColor == null) {
+            mParkedTextColor = ParkedTextView.DEFAULT_TEXT_COLOR;
+        }
+
+        mParkedHintColor = a.getString(R.styleable.ParkedTextView_parkedHintColor);
+        if (mParkedHintColor == null) {
+            mParkedHintColor = ParkedTextView.DEFAULT_TEXT_COLOR;
+        }
+
+        mIsBoldParkedText = a.getBoolean(R.styleable.ParkedTextView_parkedTextBold, true);
+
         init();
+
+        if (hint != null) {
+            setPlaceholderText(hint);
+        }
+
+        a.recycle();
     }
 
     private void init() {
+        mText = "";
+        observeText();
+
         mTypingState = TypingState.Start;
-        addTextChangedListener(new Watcher(this));
+        addTextChangedListener(new ParkedTextViewWatcher(this));
+    }
+
+    public String getParkedText() {
+        return mParkedText;
     }
 
     public void setParkedText(String parkedText) {
@@ -78,12 +118,49 @@ public class ParkedTextView extends EditText {
 
     private void setTypedText(String typedText) {
         mText = typedText;
-        mText = getTypedText() + mParkedText;
+        observeText();
+
         textChanged();
     }
 
+    private void setEmptyText() {
+        setTypedText("");
+    }
+
     public void setPlaceholderText(String placeholderText) {
-        super.setHint(Html.fromHtml("<font color=\"#CCCCCC\">" +placeholderText + "</font>" + "<b>" + mParkedText + "</b>"));
+        Spanned hint = null;
+        String parkedTextColor = reformatColor(mParkedTextColor);
+        String parkedHintColor = reformatColor(mParkedHintColor);
+        if (mIsBoldParkedText) {
+            hint = Html.fromHtml(String.format("<font color=\"#%s\">%s</font><font color=\"#%s\"><b>%s</b></font>", parkedHintColor, placeholderText, parkedTextColor, mParkedText));
+        } else {
+            hint = Html.fromHtml(String.format("<font color=\"#%s\">%s</font><font color=\"#%s\">%s</font>", parkedHintColor, placeholderText, parkedTextColor, mParkedText));
+        }
+        super.setHint(hint);
+    }
+
+    // Call when TypedText is changed
+    private String observeText() {
+        return mText = getTypedText() + mParkedText;
+    }
+
+    private String reformatColor(String color) {
+        if (color.startsWith("#")) {
+            color = color.substring(1);
+        }
+
+        if (color.length() > 6) {
+            return color.substring(2);
+        }
+        return color;
+    }
+
+    private Spanned getHtmlText() {
+        String parkedTextColor = reformatColor(mParkedTextColor);
+        if (mIsBoldParkedText) {
+            return Html.fromHtml(String.format("<font color=\"#%s\">%s</font><font color=\"#%s\"><b>%s</b></font>", parkedTextColor, getTypedText(), parkedTextColor, mParkedText));
+        }
+        return Html.fromHtml(String.format("<font color=\"#%s\">%s</font>", parkedTextColor, getTypedText() + mParkedText));
     }
 
     private void textChanged() {
@@ -92,8 +169,7 @@ public class ParkedTextView extends EditText {
                 if (mText.length() <= 0) {
                     return;
                 }
-                mText = getTypedText() + mParkedText;
-                setText(Html.fromHtml(getTypedText() + "<b>" + mParkedText + "</b>"));
+                setText(getHtmlText(), BufferType.SPANNABLE);
                 goToBeginningOfParkedText();
 
                 mTypingState = TypingState.Typed;
@@ -101,11 +177,11 @@ public class ParkedTextView extends EditText {
             case Typed:
                 if (mText.equals(mParkedText)) {
                     mTypingState = TypingState.Start;
-                    mText = "";
-                    mText = getTypedText() + mParkedText;
-                    setText(Html.fromHtml(getTypedText() + "<b>" + mParkedText + "</b>"));
+                    setText(getHtmlText(), BufferType.SPANNABLE);
                     return;
                 }
+
+                setText(getHtmlText(), BufferType.SPANNABLE);
 
                 goToBeginningOfParkedText();
 
@@ -114,11 +190,36 @@ public class ParkedTextView extends EditText {
         }
     }
 
-    private static class Watcher implements TextWatcher {
+    public boolean isBoldParkedText() {
+        return mIsBoldParkedText;
+    }
+
+    public void setBoldParkedText(boolean boldParkedText) {
+        mIsBoldParkedText = boldParkedText;
+    }
+
+    public String getParkedTextColor() {
+        return mParkedTextColor;
+    }
+
+    public void setParkedTextColor(String parkedTextColor) {
+        mParkedTextColor = parkedTextColor;
+    }
+
+    public String getParkedHintColor() {
+        return mParkedHintColor;
+    }
+
+    public void setParkedHintColor(String parkedHintColor) {
+        mParkedHintColor = parkedHintColor;
+    }
+
+    private static class ParkedTextViewWatcher implements TextWatcher {
 
         private ParkedTextView mParkedTextView;
+        private boolean mIsDeleteText;
 
-        public Watcher(ParkedTextView parkedTextView) {
+        public ParkedTextViewWatcher(ParkedTextView parkedTextView) {
             this.mParkedTextView = parkedTextView;
         }
 
@@ -127,12 +228,34 @@ public class ParkedTextView extends EditText {
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+            if (before > 0) {
+                mIsDeleteText = true;
+            } else {
+                mIsDeleteText = false;
+            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
             mParkedTextView.removeTextChangedListener(this);
-            mParkedTextView.setTypedText(s.toString());
+
+            String text = s.toString();
+            if (mIsDeleteText) {
+
+                if (text.length() < mParkedTextView.getParkedText().length()) {
+                    mParkedTextView.setEmptyText();
+                } else {
+                    String parkedText = text.substring(mParkedTextView.getBeginningPositionOfParkedText() - 1);
+                    if (!parkedText.equals(mParkedTextView.getParkedText())) {
+                        mParkedTextView.setEmptyText();
+                    } else {
+                        mParkedTextView.setTypedText(text);
+                    }
+                }
+            } else {
+                mParkedTextView.setTypedText(text);
+            }
+
             mParkedTextView.addTextChangedListener(this);
         }
     }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="ParkedTextView">
+        <attr name="parkedText" format="string" />
+        <attr name="parkedHint" format="string" />
+        <attr name="parkedTextColor" format="string" />
+        <attr name="parkedHintColor" format="string" />
+        <attr name="parkedTextBold" format="boolean" />
+    </declare-styleable>
+
+</resources>

@@ -13,10 +13,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        ParkedTextView parkedTextView = (ParkedTextView) findViewById(R.id.parked_text_view);
-        parkedTextView.setParkedText(".slack.com");
-        parkedTextView.setPlaceholderText("yourteam");
     }
 
     @Override
